@@ -22,8 +22,10 @@ public:
      *       [4-7] frame_id: 이미지 프레임 고유 식별자
      *       [8-9] chunk_idx: 패킷 인덱스
      *       [10-11] total_chunks: 전체 패킷 수
+     * @return 이미지 전체를 전송한 경우 true,
+     *         전송 중 네트워크 오류가 5회 이상 발생한 경우 false
      */
-    void sendMjpegData(std::vector<uint8_t> mjpeg_data);
+    bool sendMjpegData(std::vector<uint8_t> mjpeg_data);
 private:
     const int device_id_ = 1;
 

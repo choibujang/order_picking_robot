@@ -30,6 +30,7 @@ export LD_LIBRARY_PATH={path_to_OrbbecSDK}/lib/arm64:$LD_LIBRARY_PATH
 ### 3. I2C 라이브러리 설치
 ```bash
 sudo apt-get install -y libi2c-dev
+sudo usermod -aG i2c $USER
 ```
 
 ### 3. 프로젝트 다운로드 및 빌드

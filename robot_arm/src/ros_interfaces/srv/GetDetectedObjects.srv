@@ -1,0 +1,9 @@
+# Request
+string device_id
+---
+# Response
+string[] class_names
+int32[] counts
+int32[] pixel_x
+int32[] pixel_y
+int32[] pixel_class_indices

@@ -11,9 +11,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/DispatchManipulationTask.action"
-  "msg/DetectedObject.msg"
-  "msg/DetectedObjectArray.msg"
-  DEPENDENCIES geometry_msgs
+  "srv/GetDetectedObjects.srv"
 )
 
 ament_export_dependencies(rosidl_default_runtime)

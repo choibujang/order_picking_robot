@@ -11,7 +11,7 @@ int main() {
         if (!cam_controller.getFrameSet())
             continue;
 
-        std::vector<uint8_t> data = cam_controller.getColorData();
+        std::vector<uint8_t> data = cam_controller.getColorFrame();
         net_controller.sendMjpegData(data);
     }
 

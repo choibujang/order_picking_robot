@@ -13,6 +13,8 @@ find_package(rclcpp_components REQUIRED)
 find_package(ros_interfaces REQUIRED)
 find_package(OrbbecSDK REQUIRED)
 find_package(robot_arm_controllers REQUIRED)
+find_package(kdl_parser REQUIRED)
+
 
 add_executable(robot_arm_node src/robot_arm_node.cpp)
 
@@ -22,19 +24,19 @@ target_include_directories(robot_arm_node
     $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(robot_arm_node 
-  PUBLIC
-    robot_arm_controllers
-)
-
-target_compile_features(robot_arm_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(robot_arm_node 
+  PUBLIC 
+    c_std_99 cxx_std_17)  # Require C99 and C++17
 
 
 ament_target_dependencies(robot_arm_node
-  "ros_interfaces"
-  "rclcpp"
-  "rclcpp_action"
-  "rclcpp_components")
+  PUBLIC
+    "ros_interfaces"
+    "rclcpp"
+    "rclcpp_action"
+    "rclcpp_components"
+    "robot_arm_controllers"
+    "kdl_parser")
 
 install(TARGETS robot_arm_node
   DESTINATION lib/${PROJECT_NAME})

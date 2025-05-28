@@ -26,7 +26,8 @@ NetController::NetController() {
 }
 
 
-void NetController::sendMjpegData(std::vector<uint8_t> mjpeg_data) {
+bool NetController::sendMjpegData(std::vector<uint8_t> mjpeg_data) {
+    int consecutive_net_failures = 0;
     uint32_t device_id = device_id_;
     int total_size = mjpeg_data.size();
     int num_chunks = (total_size + MAX_CHUNK_SIZE - 1) / MAX_CHUNK_SIZE;
@@ -46,8 +47,21 @@ void NetController::sendMjpegData(std::vector<uint8_t> mjpeg_data) {
 
         memcpy(packet.data() + HEADER_SIZE, mjpeg_data.data() + offset, chunk_size);
 
-        sendto(sockfd_, packet.data(), packet.size(), 0, (struct sockaddr *)&(server_addr_), sizeof(server_addr_));
+        ssize_t bytes_sent = sendto(sockfd_, packet.data(), packet.size(), 0, (struct sockaddr *)&(server_addr_), sizeof(server_addr_));
+
+        if (bytes_sent < 0) {
+            consecutive_net_failures++;
+
+            if (consecutive_net_failures > 5) {
+                frame_id_++;
+                return false;
+            }
+        } else {
+            consecutive_net_failures = 0;
+        }
     }
+
     frame_id_++;
+    return true;
 }
 
