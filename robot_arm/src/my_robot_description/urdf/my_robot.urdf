@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="my_robot" xmlns:xacro="http://ros.org/wiki/xacro">
   <!-- world 프레임은 절대 좌표계를 나타내며, 일반적으로 (0,0,0) 에서 시작. 정의하지 않더라도 시뮬레이션 환경이 기본적으로 제공 -->
   <link name="world"/>  
   <joint name="virtual_joint" type="fixed">

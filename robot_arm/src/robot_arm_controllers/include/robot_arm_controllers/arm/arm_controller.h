@@ -31,7 +31,7 @@ public:
 
         std::string urdf_file = ament_index_cpp::get_package_share_directory("my_robot_description") + "/urdf/my_robot.urdf";
         std::string base_link = "base_link";
-        std::string end_effector = "joint_5";
+        std::string end_effector = "link_5";
     
         if (!loadKDLChain(urdf_file, base_link, end_effector)) {
             throw std::runtime_error("Failed to initialize KDL chain.");

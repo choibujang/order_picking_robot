@@ -48,34 +48,49 @@ void RobotArmNode::execute(const std::shared_ptr<GoalHandleDMT> goal_handle)
   auto feedback = std::make_shared<DispatchManipulationTask::Feedback>();
   auto result = std::make_shared<DispatchManipulationTask::Result>();
 
-  // AI 서버로 이미지 전송 시작, while로 SendFrameThread내의 이상 감지.
-  startSendFrameThread();
-
-  while (rclcpp::ok()) {
-    if (consecutive_cam_failures_) {
-      RCLCPP_ERROR(this->get_logger(), "Camera Failed 5 times");
-      stopSendFrameThread();
-      result->success = false;
-      result->error_code = 1;
-      result->error_msg = "Camera Failure.";
-      goal_handle->abort(result);
-      RCLCPP_ERROR(this->get_logger(), "Goal aborted");
-      return;
-    }
-
+  // 0.1초에 한번씩 카메라나 네트워크에 문제가 생겼는지 확인하는 타이머.
+  RCLCPP_INFO(this->get_logger(), "Create Wall Timer");
+  status_timer_ = this->create_wall_timer(std::chrono::milliseconds(100), [this]() {
     if (consecutive_net_failures_) {
-      RCLCPP_ERROR(this->get_logger(), "Network Failed 5 times");
+      RCLCPP_ERROR(this->get_logger(), "Network failed.");
+      abort_requested_ = true;
+    }
+
+    if (consecutive_cam_failures_) {
+      RCLCPP_ERROR(this->get_logger(), "Camera failed.");
+      abort_requested_ = true;
+    }
+  });
+
+  // 타이머의 flag를 확인한다
+  RCLCPP_INFO(this->get_logger(), "status check while");
+  while (rclcpp::ok()) {
+    if (abort_requested_) {
+      status_timer_.reset();
       stopSendFrameThread();
+
       result->success = false;
-      result->error_code = 2;
-      result->error_msg = "Network Failure";
+
+      if (consecutive_cam_failures_) {
+        result->error_code = 1;
+        result->error_msg = "Camera Failure.";
+
+      }
+
+      if (consecutive_net_failures_) {
+        result->error_code = 2;
+        result->error_msg = "Network Failure";
+      }
+
       goal_handle->abort(result);
       RCLCPP_ERROR(this->get_logger(), "Goal aborted");
       return;
     }
-
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+
+  RCLCPP_INFO(this->get_logger(), "Start Send Frame Thread");
+  startSendFrameThread();
 
   // AI 서버에 서비스 요청. 3회 이상 응답이 없을 경우 에러 처리
   int retries = 3;
@@ -114,85 +129,6 @@ void RobotArmNode::execute(const std::shared_ptr<GoalHandleDMT> goal_handle)
   stopSendFrameThread();
  
   
-
-
-
-
-
-
-  //   bool goal_met = false;
-
-  //   std::lock_guard<std::mutex> lock(detected_mutex_);
-
-  //   // goal 항목들이 latest_detected_objects_에 다 있는지 확인
-  //   goal_met = true;
-  //   for (size_t i = 0; i < goal->item_names.size(); ++i) {
-  //     const std::string& name = goal->item_names[i];
-  //     int required_count = goal->item_quantities[i];
-  //     int detected_count = 0;
-
-  //     for (const auto& obj : latest_detected_objects_) {
-  //       if (obj.name == name) {
-  //         detected_count += obj.count;
-  //       }
-  //     }
-
-  //     if (detected_count < required_count) {
-  //       goal_met = false;
-  //       break;
-  //     }
-  //   }
-  
-  //   if (goal_met) {
-  //     confirmed_objects = latest_detected_objects_;
-  //     RCLCPP_INFO(this->get_logger(), "All target items detected.");
-  //     break;
-  //   }
-  
-  //   rclcpp::Rate(5).sleep();
-  // }
-
-  // cv::Mat depth_data = cam_controller_.getDepthData()
-  // cv::Mat depth_map = cam_controller_.createDepthMap(depth_data);
-
-  // vector<vector<float>> comfirmed_objects_3d = convertTo3DCoords(confirmed_objects, depth_map);
-
-
-
-
-  
-
-
-
-  // for (int i = 1; (i < size(goal->item_names)) && rclcpp::ok(); i++) {
-  //   // Check if there is a cancel request
-  //   if (goal_handle->is_canceling()) {
-  //     result->success = false;
-  //     result->error_code = 100;
-  //     result->error_msg = "client cancel";
-  //     goal_handle->canceled(result);
-  //     RCLCPP_INFO(this->get_logger(), "Goal canceled");
-  //     return;
-  //   }
-
-
-
-  //   feedback->progress = i;
-  //   // Publish feedback
-  //   goal_handle->publish_feedback(feedback);
-  //   RCLCPP_INFO(this->get_logger(), "Publish feedback");
-
-  //   loop_rate.sleep();
-  // }
-
-  // // Check if goal is done
-  // if (rclcpp::ok()) {
-  //   result->success = true;
-  //   result->error_code = 0;
-  //   result->error_msg = "";
-  //   goal_handle->succeed(result);
-  //   RCLCPP_INFO(this->get_logger(), "Goal succeeded");
-  // }
 }
  
 

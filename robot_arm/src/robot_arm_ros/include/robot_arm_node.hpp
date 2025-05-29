@@ -40,7 +40,6 @@ public:
       std::bind(&RobotArmNode::handle_accepted, this, _1));
 
       this->service_client_ = this->create_client<GetDetectedObjects>("get_detected_objects");
-
   }
 
 private:
@@ -53,14 +52,18 @@ private:
   rclcpp_action::CancelResponse handle_cancel(const std::shared_ptr<GoalHandleDMT> goal_handle);
   void handle_accepted(const std::shared_ptr<GoalHandleDMT> goal_handle);
 
-  /**
-  
-  */
 
   /**
-    * @brief 
-    */
+   * @brief 주어진 물체 목록을 지정된 수량만큼 집어서 정해진 위치에 놓는 액션을 수행한다.
+   * 
+   * @details
+   * string[] item_names와 int32[] item_quantities를 입력으로 받아,  
+   * item_names[i]에 해당하는 물체를 item_quantities[i]개만큼 pick하고
+   * 정해진 위치에 place한다.
+   */
   void execute(const std::shared_ptr<GoalHandleDMT> goal_handle);
+
+
   // std::vector<std::vector<float>> convertTo3DCoords(const std::vector<DetectedObject>& objects, const cv::Mat& depth_map);
 
 
@@ -90,6 +93,8 @@ private:
 
   void stopSendFrameThread() {
     running_ = false;
+    consecutive_net_failures_ = false;
+    consecutive_cam_failures_ = false;
     cam_controller_.stopCameraPipeline();
 
     if (send_frame_thread_.joinable()) send_frame_thread_.join();
@@ -104,12 +109,15 @@ private:
   ArmController arm_controller_;
   CamController cam_controller_;
   NetController net_controller_;
-
+  
   std::thread send_frame_thread_;
-  std::atomic<bool> running_;
-  std::atomic<bool> consecutive_net_failures_;
-  std::atomic<bool> consecutive_cam_failures_;
   rclcpp::TimerBase::SharedPtr status_timer_;
+
+  std::atomic<bool> running_ = false;
+  std::atomic<bool> consecutive_net_failures_ = false;
+  std::atomic<bool> consecutive_cam_failures_ = false;
+  std::atomic<bool> abort_requested_ = false;
+  
 };
 
 #endif
