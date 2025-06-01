@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <thread>
+#include <mutex>
 #include <opencv2/opencv.hpp>
 
 #include "libobsensor/ObSensor.hpp"
@@ -15,28 +16,20 @@
 class CamController {
 public:
     /**
-     * @brief 카메라의 color, depth 스트리밍을 활성화한다.  
+     * @brief 카메라의 color, depth 스트리밍을 활성화한다.
      */
-    void startCameraPipeline();
+    bool start();
 
     /**
-     * @brief 활성화된 스트림에서 frameset을 가져와 클래스 멤버 current_frameset에 저장한다.
-     * @param timeout_ms 프레임 수신 대기 최대 시간
-     * @param max_cnt 최대 재시도 횟수
+     * @brief 활성화된 스트림에서 frameset을 가져와 클래스 멤버 current_color_frame_, color_depth_frame_에 저장한다.
      * @return frameset 수신 성공 여부
      */
-    bool getFrameSet(int timeout_ms=100, int max_cnt=10);
+    bool update();
 
     /**
      * @brief 카메라 스트리밍을 중지한다.
      */
-    void stopCameraPipeline();
-
-    /**
-     * @brief current_frameset에서 color frame을 가져온다.
-     * @return 이미지 데이터를 담은 vector
-     */
-    std::vector<uint8_t> getColorFrame();
+    void stop();
 
     /**
      * @brief RGB 이미지의 특정 픽셀 좌표를 카메라 좌표계 기준 3D 좌표로 변환한다.
@@ -50,16 +43,38 @@ public:
      * @brief 카메라의 intrinsic parameter들을 출력한다.
      */ 
     void getCameraParam();
-    
+
+    std::vector<uint8_t>  getColorFrame() {
+        std::vector<uint8_t> color_frame;
+        {
+            std::lock_guard<std::mutex> lock(color_frame_mutex_);
+            color_frame = current_color_frame_;
+        }
+        return color_frame;
+    }
+
+    cv::Mat getDepthFrame() {
+        cv::Mat depth_frame;
+        {
+            std::lock_guard<std::mutex> lock(depth_frame_mutex_);
+            depth_frame = current_depth_frame_;
+        }
+        return depth_frame;
+    }
+
+    cv::Mat getDepthMap() {
+        updateDepthMap();
+
+        return current_depth_map_.clone();
+    }
+
+    bool isCameraError() {
+        return camer_error_;
+    }
+
 private:
     /**
-     * @brief current_frameset에서 depth frame을 가져온다.
-     * @return depth 데이터를 담은 640*400 행렬
-     */ 
-     cv::Mat getDepthFrame();
-
-    /**
-     * @brief Depth Frame을 기반으로 RGB 카메라 기준으로 정렬된 Depth Map을 생성.
+     * @brief current_depth_frame_을 기반으로 RGB 카메라 기준으로 정렬된 Depth Map을 생성.
      *        RGB 카메라와 Depth 카메라의 해상도 차이로 인해
      *        Depth = 0인 빈 영역은 3x3 주변 평균으로 보간하여 채움.
      */
@@ -67,8 +82,13 @@ private:
     
     
     ob::Pipeline pipe_;
-    std::shared_ptr<ob::FrameSet> current_frameset_;
+    std::vector<uint8_t> current_color_frame_;
+    cv::Mat current_depth_frame_;
     cv::Mat current_depth_map_;
+    std::mutex color_frame_mutex_;
+    std::mutex depth_frame_mutex_;
+
+    bool camera_error_ = false;
 
     float depth_fx_ = 475.328;
     float depth_fy_ = 475.328;

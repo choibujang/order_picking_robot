@@ -1,6 +1,7 @@
 #include "robot_arm_controllers/net/net_controller.hpp"
 
-NetController::NetController() {
+NetController::NetController(int device_id, std::string server_ip, int server_port)
+    : device_id_(device_id), server_ip_(server_ip), server_port_(server_port)  {
     int try_cnt = 0;
     while (try_cnt < 5) {
         sockfd_ = socket(AF_INET, SOCK_DGRAM, 0);

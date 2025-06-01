@@ -26,8 +26,14 @@
 
 class ArmController {
 public:
-    ArmController() {
-        pca.set_pwm_freq(50);
+    ArmController(bool test=false)
+    : test_(test),
+      pca(test ? PiPCA9685::PCA9685("test", 0x00, true)
+               : PiPCA9685::PCA9685())  
+    {
+        if (!test_) {
+            pca.set_pwm_freq(50);
+        }
 
         std::string urdf_file = ament_index_cpp::get_package_share_directory("my_robot_description") + "/urdf/my_robot.urdf";
         std::string base_link = "base_link";
@@ -47,6 +53,7 @@ public:
     std::vector<double> calcIK(std::vector<double> pick_target_pos);
 
 private:
+    bool test_;
     PiPCA9685::PCA9685 pca;
     KDL::Chain kdl_chain;
     std::unique_ptr<KDL::ChainIkSolverPos_LMA> ik_solver;

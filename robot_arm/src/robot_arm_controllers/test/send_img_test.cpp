@@ -3,12 +3,12 @@
 
 int main() {
     CamController cam_controller;
-    NetController net_controller;
+    NetController net_controller(1, "", 8080);
 
-    cam_controller.startCameraPipeline();
+    cam_controller.start();
     
     while (true) {
-        if (!cam_controller.getFrameSet())
+        if (!cam_controller.update())
             continue;
 
         std::vector<uint8_t> data = cam_controller.getColorFrame();

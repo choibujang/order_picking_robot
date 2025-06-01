@@ -2,17 +2,21 @@
 
 namespace PiPCA9685 {
 
-PCA9685::PCA9685(const std::string &device, int address) {
-  i2c_dev = std::make_unique<I2CPeripheral>(device, address);
+PCA9685::PCA9685(const std::string &device, int address, bool test): test_(test) {
+  if (test_) {
+    ;
+  } else {
+    i2c_dev = std::make_unique<I2CPeripheral>(device, address);
   
-  set_all_pwm(0,0);
-  i2c_dev->WriteRegisterByte(MODE2, OUTDRV);    // The 16 LEDn outputs are configured with a totem pole structure.
-  i2c_dev->WriteRegisterByte(MODE1, ALLCALL);   // PCA9685 responds to LED All Call I2C-bus address.
-  usleep(5'000);
-  auto mode1_val = i2c_dev->ReadRegisterByte(MODE1);  
-  mode1_val &= ~SLEEP;
-  i2c_dev->WriteRegisterByte(MODE1, mode1_val); // PCA9685 does not respond to LED All Call I2C-bus address.
-  usleep(5'000);
+    set_all_pwm(0,0);
+    i2c_dev->WriteRegisterByte(MODE2, OUTDRV);    // The 16 LEDn outputs are configured with a totem pole structure.
+    i2c_dev->WriteRegisterByte(MODE1, ALLCALL);   // PCA9685 responds to LED All Call I2C-bus address.
+    usleep(5'000);
+    auto mode1_val = i2c_dev->ReadRegisterByte(MODE1);  
+    mode1_val &= ~SLEEP;
+    i2c_dev->WriteRegisterByte(MODE1, mode1_val); // PCA9685 does not respond to LED All Call I2C-bus address.
+    usleep(5'000);
+  }
 }
 
 PCA9685::~PCA9685() = default;

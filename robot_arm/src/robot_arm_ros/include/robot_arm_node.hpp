@@ -28,7 +28,9 @@ public:
   using GetDetectedObjects = ros_interfaces::srv::GetDetectedObjects;
 
   explicit RobotArmNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
-  : Node("robot_arm_node", options)
+  : Node("robot_arm_node", options),
+    arm_controller_(ArmController(true)),
+    net_controller_(NetController(1, "127.0.0.1", 8080))
   {
       using namespace std::placeholders;
 

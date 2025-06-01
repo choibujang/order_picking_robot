@@ -56,6 +56,9 @@ target_link_libraries(motor_test PUBLIC robot_arm_controllers)
 add_executable(send_img_test test/send_img_test.cpp)
 target_link_libraries(send_img_test PUBLIC robot_arm_controllers)
 
+add_executable(depthmap_test test/depthmap_test.cpp)
+target_link_libraries(depthmap_test PUBLIC robot_arm_controllers)
+
 install(
   TARGETS robot_arm_controllers
   EXPORT export_robot_arm_controllers

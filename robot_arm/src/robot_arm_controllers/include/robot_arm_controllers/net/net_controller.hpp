@@ -11,7 +11,7 @@
 
 class NetController {
 public:
-    NetController();
+    NetController(int device_id, std::string server_ip, int server_port);
 
     /**
      * @brief  하나의 MJPEG 이미지 데이터를 여러 개의 UDP 패킷으로 나누고
@@ -27,12 +27,12 @@ public:
      */
     bool sendMjpegData(std::vector<uint8_t> mjpeg_data);
 private:
-    const int device_id_ = 1;
+    const int device_id_;
 
     int sockfd_;
     struct sockaddr_in server_addr_;
-    std::string server_ip_ = "192.168.249.253";
-    int server_port_ = 8080;
+    const std::string server_ip_;
+    const int server_port_;
     
     int frame_id_ = 0;
     const int HEADER_SIZE = 12;
