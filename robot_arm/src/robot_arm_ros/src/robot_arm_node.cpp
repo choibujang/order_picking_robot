@@ -48,51 +48,11 @@ void RobotArmNode::execute(const std::shared_ptr<GoalHandleDMT> goal_handle)
   auto feedback = std::make_shared<DispatchManipulationTask::Feedback>();
   auto result = std::make_shared<DispatchManipulationTask::Result>();
 
-  // 0.1초에 한번씩 카메라나 네트워크에 문제가 생겼는지 확인하는 타이머.
-  RCLCPP_INFO(this->get_logger(), "Create Wall Timer");
-  status_timer_ = this->create_wall_timer(std::chrono::milliseconds(100), [this]() {
-    if (consecutive_net_failures_) {
-      RCLCPP_ERROR(this->get_logger(), "Network failed.");
-      abort_requested_ = true;
-    }
-
-    if (consecutive_cam_failures_) {
-      RCLCPP_ERROR(this->get_logger(), "Camera failed.");
-      abort_requested_ = true;
-    }
-  });
-
-  // 타이머의 flag를 확인한다
-  RCLCPP_INFO(this->get_logger(), "status check while");
-  while (rclcpp::ok()) {
-    if (abort_requested_) {
-      status_timer_.reset();
-      stopSendFrameThread();
-
-      result->success = false;
-
-      if (consecutive_cam_failures_) {
-        result->error_code = 1;
-        result->error_msg = "Camera Failure.";
-
-      }
-
-      if (consecutive_net_failures_) {
-        result->error_code = 2;
-        result->error_msg = "Network Failure";
-      }
-
-      goal_handle->abort(result);
-      RCLCPP_ERROR(this->get_logger(), "Goal aborted");
-      return;
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
-
-  RCLCPP_INFO(this->get_logger(), "Start Send Frame Thread");
+  // AI 서버로 영상 전송 시작
   startSendFrameThread();
+  RCLCPP_INFO(this->get_logger(), "Start Send Frame Thread");
 
-  // AI 서버에 서비스 요청. 3회 이상 응답이 없을 경우 에러 처리
+  // AI 서버에 서비스 요청
   int retries = 3;
 
   while (retries-- > 0 && !service_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -108,7 +68,7 @@ void RobotArmNode::execute(const std::shared_ptr<GoalHandleDMT> goal_handle)
     stopSendFrameThread();
     result->success = false;
     result->error_code = 3;
-    result->error_msg = "/get_detected_objects service not available.";
+    result->error_msg = "Cannot find /get_detected_objects service."
     goal_handle->abort(result);
     RCLCPP_ERROR(this->get_logger(), "Goal aborted");
     return;
@@ -117,11 +77,15 @@ void RobotArmNode::execute(const std::shared_ptr<GoalHandleDMT> goal_handle)
   auto request = std::make_shared<GetDetectedObjects::Request>();
   auto future = service_client_->async_send_request(request);
 
-  if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future, std::chrono::seconds(2)) 
+  if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future, std::chrono::seconds(5)) 
       == rclcpp::FutureReturnCode::SUCCESS) {
 
     auto response = future.get();
     printDetectedObjects(response);
+  } else if (ret == rclcpp::FutureReturnCode::TIMEOUT) {
+    RCLCPP_WARN(this->get_logger(), "Timed out waiting for /get_detected_objects service response.");
+  } else {
+      RCLCPP_ERROR(this->get_logger(), "Service call interrupted or failed.");
   }
 
 
@@ -132,19 +96,6 @@ void RobotArmNode::execute(const std::shared_ptr<GoalHandleDMT> goal_handle)
 }
  
 
-
-// std::vector<std::vector<float>> RobotArmNode::convertTo3DCoords(const std::vector<DetectedObject>& objects, const cv::Mat& depth_map) {
-//   std::vector<std::vector<float>> result;
-
-//   for (const auto& obj : objects) {
-//     for (const auto& pixel : obj.pixels) {
-//       result.push_back(cam_controller_.pixelToCameraCoords(pixel.x, pixel.y, depth_map));
-//     }
-//   }
-
-//   return result;
-// }
-
 void RobotArmNode::printDetectedObjects(const std::shared_ptr<ros_interfaces::srv::GetDetectedObjects::Response>& response)
 {
     const auto& class_names = response->class_names;
@@ -153,7 +104,6 @@ void RobotArmNode::printDetectedObjects(const std::shared_ptr<ros_interfaces::sr
     const auto& pixel_y = response->pixel_y;
     const auto& pixel_class_indices = response->pixel_class_indices;
 
-    // index → 구조체
     struct ObjectInfo {
         std::string name;
         int count;

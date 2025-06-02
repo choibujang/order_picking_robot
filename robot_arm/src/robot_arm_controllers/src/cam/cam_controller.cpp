@@ -78,7 +78,7 @@ void CamController::updateDepthMap() {
 
     for (int vd = 0; vd < current_depth_frame.rows; ++vd) {
         for (int ud = 0; ud < current_depth_frame.cols; ++ud) {
-            uint16_t z = current_depth_frame.at<uint16_t>(vd, ud);
+            float z = current_depth_frame.at<float>(vd, ud);
             if (z == 0) continue;
 
             // Depth 픽셀 좌표를 Depth 카메라 좌표계의 3d 좌표로 변환
@@ -102,10 +102,10 @@ void CamController::updateDepthMap() {
 
             // 범위 체크 후 저장
             if (u_rgb >= 0 && u_rgb < rgb_width_ && v_rgb >= 0 && v_rgb < rgb_height_) {
-                uint16_t& current = transformed.at<uint16_t>(v_rgb, u_rgb);
+                float& current = transformed.at<float>(v_rgb, u_rgb);
                 // 이미 값이 있다면 더 가까운 z만 저장
                 if (current == 0 || Zr < current) {
-                    current = static_cast<uint16_t>(Zr);
+                    current = static_cast<float>(Zr);
                 }
             }
 
@@ -119,7 +119,7 @@ void CamController::updateDepthMap() {
             if (transformed.at<float>(y, x) == 0) {
                 empty_cnt++;
 
-                int sum = 0;
+                float sum = 0.0;
                 int count = 0;
 
                 // 주변 3x3 이웃 평균
@@ -204,7 +204,7 @@ void CamController::getCameraParam() {
 std::vector<float> CamController::pixelToCameraCoords(int u, int v) {
     updateDepthMap();
 
-    float Z = current_depth_map_.at<uint16_t>(v, u);
+    float Z = current_depth_map_.at<float>(v, u);
     float X = (u - rgb_cx_) * Z / rgb_fx_;
     float Y = (v - rgb_cy_) * Z / rgb_fy_;
     return {X, Y, Z};

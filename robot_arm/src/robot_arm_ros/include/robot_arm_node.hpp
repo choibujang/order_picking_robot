@@ -66,27 +66,20 @@ private:
   void execute(const std::shared_ptr<GoalHandleDMT> goal_handle);
 
 
-  // std::vector<std::vector<float>> convertTo3DCoords(const std::vector<DetectedObject>& objects, const cv::Mat& depth_map);
-
-
   void startSendFrameThread() {
     running_ = true;
-    consecutive_net_failures_ = false;
-    consecutive_cam_failures_ = false;
 
     send_frame_thread_ = std::thread([this]() {
-      cam_controller_.startCameraPipeline();
+      cam_controller_.start();
 
       while (running_) {
-        if(!cam_controller_.getFrameSet()) {
-          consecutive_cam_failures_ = true;
+        if(!cam_controller_.update()) {
+          continue;
         }
 
         auto color_frame = cam_controller_.getColorFrame();
         
-        if (!net_controller_.sendMjpegData(color_frame)) {
-          consecutive_net_failures_ = true;
-        }
+        net_controller_.sendMjpegData(color_frame);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
@@ -95,9 +88,7 @@ private:
 
   void stopSendFrameThread() {
     running_ = false;
-    consecutive_net_failures_ = false;
-    consecutive_cam_failures_ = false;
-    cam_controller_.stopCameraPipeline();
+    cam_controller_.stop();
 
     if (send_frame_thread_.joinable()) send_frame_thread_.join();
   }
@@ -114,11 +105,9 @@ private:
   
   std::thread send_frame_thread_;
   rclcpp::TimerBase::SharedPtr status_timer_;
-
   std::atomic<bool> running_ = false;
-  std::atomic<bool> consecutive_net_failures_ = false;
-  std::atomic<bool> consecutive_cam_failures_ = false;
-  std::atomic<bool> abort_requested_ = false;
+
+
   
 };
 

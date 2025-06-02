@@ -69,12 +69,13 @@ public:
     }
 
     bool isCameraError() {
-        return camer_error_;
+        return camera_error_;
     }
 
 private:
     /**
-     * @brief current_depth_frame_을 기반으로 RGB 카메라 기준으로 정렬된 Depth Map을 생성.
+     * @brief 640*400 current_depth_frame_을 기반으로 
+     *        640*480 RGB 카메라 기준으로 정렬된 Depth Map을 생성.
      *        RGB 카메라와 Depth 카메라의 해상도 차이로 인해
      *        Depth = 0인 빈 영역은 3x3 주변 평균으로 보간하여 채움.
      */

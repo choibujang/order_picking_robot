@@ -28,7 +28,7 @@ NetController::NetController(int device_id, std::string server_ip, int server_po
 
 
 bool NetController::sendMjpegData(std::vector<uint8_t> mjpeg_data) {
-    int consecutive_net_failures = 0;
+    static int fail_count = 0;
     uint32_t device_id = device_id_;
     int total_size = mjpeg_data.size();
     int num_chunks = (total_size + MAX_CHUNK_SIZE - 1) / MAX_CHUNK_SIZE;
@@ -51,14 +51,14 @@ bool NetController::sendMjpegData(std::vector<uint8_t> mjpeg_data) {
         ssize_t bytes_sent = sendto(sockfd_, packet.data(), packet.size(), 0, (struct sockaddr *)&(server_addr_), sizeof(server_addr_));
 
         if (bytes_sent < 0) {
-            consecutive_net_failures++;
-
-            if (consecutive_net_failures > 5) {
-                frame_id_++;
+            if (++fail_count >= 10) {
+                ++frame_id_;
+                network_error_ = true;
+                std::cerr << "Failed to get send bytes for 10 times.." << std::endl;
                 return false;
             }
         } else {
-            consecutive_net_failures = 0;
+            fail_count = 0;
         }
     }
 

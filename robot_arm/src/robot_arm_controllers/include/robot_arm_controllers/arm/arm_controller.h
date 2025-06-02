@@ -58,7 +58,5 @@ private:
     KDL::Chain kdl_chain;
     std::unique_ptr<KDL::ChainIkSolverPos_LMA> ik_solver;
     std::vector<double> current_joints = {0, 0, 0, 0, 0, 0};
-    double min_ms = 0.6;
-    double max_ms = 2.4;
 };
 #endif 

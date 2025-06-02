@@ -12,31 +12,53 @@ Depth Camera를 이용해 대상 물체를 인식하고 3D 좌표를 추정한 �
 - [Orbbec] Astra Stereo S U3 3D Depth Camera
 - 서보모터 MG996R * 6
 - PCA9685 16채널 12비트 PWM 서보 드라이버
-- USB C PD TO 터미널 단자 트리거 모듈 MALE [HPRO-0024]
 
 ## 🚀 Getting Started
-### 1. 시스템 환경
+### Robot Arm
 - **운영체제**: Ubuntu 20.04
 - **ROS 버전**: ROS2 Humble
 
-### 2. Orbbec Astra SDK 설치
+#### Orbbec Astra SDK 설치
 https://github.com/orbbec/OrbbecSDK   
-환경변수 설정:
+- 환경변수 설정:
 ```bash
 export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:{path_to_orbbecSDK}
 export LD_LIBRARY_PATH={path_to_OrbbecSDK}/lib/arm64:$LD_LIBRARY_PATH
 ```
 
-### 3. I2C 라이브러리 설치
+#### I2C 라이브러리 설치
 ```bash
 sudo apt-get install -y libi2c-dev
 sudo usermod -aG i2c $USER
 ```
 
-### 3. 프로젝트 다운로드 및 빌드
-- robot_arm 빌드
+#### 프로젝트 다운로드 및 빌드
 ```bash
+git clone https://github.com/choibujang/ros_vision_arm.git
 cd robot_arm
+source /opt/ros/humble/setup.bash
 colcon build
 source install/setup.bash
+```
+
+#### 실행
+```bash
+ros2 run robot_arm_ros robot_arm_node
+```
+
+### AI Server
+- **운영체제**: Ubuntu 20.04
+- **ROS 버전**: ROS2 Humble
+#### 프로젝트 다운로드 및 빌드
+```bash
+git clone https://github.com/choibujang/ros_vision_arm.git
+cd ai_server
+source /opt/ros/humble/setup.bash
+colcon build
+source install/setup.bash
+```
+#### 실행
+```bash
+cd cd src/ai_server_pkg/ai_server_pkg
+python3 ./ai_server_node.py
 ```
