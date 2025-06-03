@@ -201,11 +201,18 @@ void CamController::getCameraParam() {
 }
 
     
-std::vector<float> CamController::pixelToCameraCoords(int u, int v) {
+std::vector<std::vector<float>> CamController::pixelToCameraCoords(const std::vector<std::pair<int,int>>& pixel_coords) {
     updateDepthMap();
 
-    float Z = current_depth_map_.at<float>(v, u);
-    float X = (u - rgb_cx_) * Z / rgb_fx_;
-    float Y = (v - rgb_cy_) * Z / rgb_fy_;
-    return {X, Y, Z};
+    std::vector<std::vector<float>> result;
+
+    for (auto [u, v] : pixel_coords) {
+        float Z = current_depth_map_.at<float>(v, u);
+        float X = (u - rgb_cx_) * Z / rgb_fx_;
+        float Y = (v - rgb_cy_) * Z / rgb_fy_;
+
+        result.push_back({X, Y, Z});
+    }
+
+    return result;
 }

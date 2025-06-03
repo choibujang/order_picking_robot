@@ -9,9 +9,20 @@
 #include <cstring>
 #include <thread>
 
+/**
+ * @class NetController
+ * @brief MJPEG 이미지 데이터를 UDP socket을 통해 전송하는 클래스
+ */
 class NetController {
 public:
     NetController(int device_id, std::string server_ip, int server_port);
+
+    ~NetController() {
+        if (sockfd_ > 0) {
+            ::close(sockfd_);
+            std::cout << "[NetController] socket closed\n";
+        }
+    }
 
     /**
      * @brief  하나의 MJPEG 이미지 데이터를 여러 개의 UDP 패킷으로 나누고

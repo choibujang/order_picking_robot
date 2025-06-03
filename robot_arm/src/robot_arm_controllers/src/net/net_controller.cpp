@@ -14,7 +14,9 @@ NetController::NetController(int device_id, std::string server_ip, int server_po
     }
 
     if (sockfd_ < 0) {
-        throw std::runtime_error("Failed to create socket");
+        network_error_ = true;
+        std::cerr << "[NetController] Failed to create socket." << std::endl;
+        return;
     }
 
     memset(&server_addr_, 0, sizeof(server_addr_));
@@ -22,7 +24,7 @@ NetController::NetController(int device_id, std::string server_ip, int server_po
     server_addr_.sin_port = htons(server_port_);
     inet_pton(AF_INET, server_ip_.c_str(), &(server_addr_.sin_addr));
 
-    std::cout << "Finished NetController initialization" << std::endl;
+    std::cout << "[NetController] initializated." << std::endl;
 
 }
 
@@ -54,7 +56,7 @@ bool NetController::sendMjpegData(std::vector<uint8_t> mjpeg_data) {
             if (++fail_count >= 10) {
                 ++frame_id_;
                 network_error_ = true;
-                std::cerr << "Failed to get send bytes for 10 times.." << std::endl;
+                std::cerr << "[NetController] Failed to get send bytes for 10 times.." << std::endl;
                 return false;
             }
         } else {

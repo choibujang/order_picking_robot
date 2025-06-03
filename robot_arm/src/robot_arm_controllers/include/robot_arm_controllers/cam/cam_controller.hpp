@@ -15,6 +15,8 @@
  */
 class CamController {
 public:
+    CamController() {}
+
     /**
      * @brief 카메라의 color, depth 스트리밍을 활성화한다.
      */
@@ -33,11 +35,10 @@ public:
 
     /**
      * @brief RGB 이미지의 특정 픽셀 좌표를 카메라 좌표계 기준 3D 좌표로 변환한다.
-     * @param u RGB 이미지의 x좌표
-     * @param v RGB 이미지의 y좌표
+     * @param pixel_coords RGB 이미지의 x, y좌표
      * @return 해당 픽셀의 카메라 기준 3d 좌표
      */
-    std::vector<float> pixelToCameraCoords(int u, int v);
+    std::vector<std::vector<float>> pixelToCameraCoords(const std::vector<std::pair<int,int>& pixel_coords);
 
     /**
      * @brief 카메라의 intrinsic parameter들을 출력한다.
