@@ -1,7 +1,12 @@
+# pylint: disable=invalid-name
+"""
+UDP 통신을 통해 영상 프레임 청크를 수신하고 재조립하는 서버입니다.
+"""
 import socket
 from queue import Full
 from collections import defaultdict
 import time
+
 
 class UDPServer:
     def __init__(self, frame_queue):
@@ -26,7 +31,9 @@ class UDPServer:
         self.RECEIVE_THRESHOLD = 80
 
         # { (device_id, frame_id) : { 'chunks': {}, 'total': N, 'start': time.time() } }
-        self.recv_buffers = defaultdict(lambda: { 'chunks': {}, 'total': None, 'start': time.time() })
+        self.recv_buffers = defaultdict(
+            lambda: {"chunks": {}, "total": None, "start": time.time()}
+        )
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(("", self.port))
@@ -40,27 +47,27 @@ class UDPServer:
         """
         while True:
             # 최대 MAX_UDP_PAYLOAD 바이트 수신
-            data, addr = self.sock.recvfrom(self.MAX_UDP_PAYLOAD)
+            data, _ = self.sock.recvfrom(self.MAX_UDP_PAYLOAD)
             if len(data) < self.HEADER_SIZE:
                 continue
 
             # 헤더 파싱
-            device_id = int.from_bytes(data[0:4], 'little')
-            frame_id = int.from_bytes(data[4:8], 'little')
-            chunk_idx = int.from_bytes(data[8:10], 'little')
-            total_chunks = int.from_bytes(data[10:12], 'little')
-            payload = data[self.HEADER_SIZE:]
+            device_id = int.from_bytes(data[0:4], "little")
+            frame_id = int.from_bytes(data[4:8], "little")
+            chunk_idx = int.from_bytes(data[8:10], "little")
+            total_chunks = int.from_bytes(data[10:12], "little")
+            payload = data[self.HEADER_SIZE :]
 
             # 재조립 버퍼에 저장
             key = (device_id, frame_id)
             buf = self.recv_buffers[key]
 
-            buf['chunks'][chunk_idx] = payload
-            buf['total'] = total_chunks
-            buf['start'] = buf.get('start', time.time())
+            buf["chunks"][chunk_idx] = payload
+            buf["total"] = total_chunks
+            buf["start"] = buf.get("start", time.time())
 
             #  지금까지 수신된 청크 개수가 total_chunks와 같으면 재조립 시도
-            if len(buf['chunks']) == total_chunks:
+            if len(buf["chunks"]) == total_chunks:
                 self.complete_and_enqueue(key)
 
     def complete_and_enqueue(self, key):
@@ -72,17 +79,21 @@ class UDPServer:
             key (tuple): (device_id, frame_id) 쌍으로 구성된 키
         """
         buf = self.recv_buffers[key]
-        chunks = buf['chunks']
+        chunks = buf["chunks"]
 
         # 청크 인덱스 순서대로 바이트를 이어붙여 전체 이미지 재조립
-        data = b''.join([chunks[i] for i in sorted(chunks.keys())])
+        data = b"".join([chunks[i] for i in sorted(chunks.keys())])
 
         # 큐에 삽입. 이미 큐가 가득 차 있으면 한 개 꺼내고 다시 삽입
         try:
-            self.frame_queue.put({ 'device_id': key[0], 'frame_id': key[1], 'data': data }, block=False)
+            self.frame_queue.put(
+                {"device_id": key[0], "frame_id": key[1], "data": data}, block=False
+            )
         except Full:
             self.frame_queue.get()
-            self.frame_queue.put({ 'device_id': key[0], 'frame_id': key[1], 'data': data }, block=False)
+            self.frame_queue.put(
+                {"device_id": key[0], "frame_id": key[1], "data": data}, block=False
+            )
 
         # 재조립이 완료된 버퍼 삭제
         del self.recv_buffers[key]
@@ -101,16 +112,18 @@ class UDPServer:
 
             # 각 키별 버퍼 정보를 체크
             for key, buf in list(self.recv_buffers.items()):
-                elapsed = now - buf['start']
-                
+                elapsed = now - buf["start"]
+
                 # 버퍼 생성 시간으로부터 경과 시간이 MAX_WAIT_TIME 초 초과한 경우
                 if elapsed > self.MAX_WAIT_TIME:
-                    if len(buf['chunks']) >= buf['total'] * self.RECEIVE_THRESHOLD:
+                    if len(buf["chunks"]) >= buf["total"] * self.RECEIVE_THRESHOLD:
                         # 청크 비율이 RECEIVE_THRESHOLD 이상이면 재조립
                         self.complete_and_enqueue(key)
                     else:
                         # 재조립 조건 미달, 폐기
-                        print(f"Dropped frame {key} (only {len(buf['chunks'])}/{buf['total']})")
+                        print(
+                            f"Dropped frame {key} (only {len(buf['chunks'])}/{buf['total']})"
+                        )
                         expired.append(key)
 
             # drop 대상 버퍼 키 삭제

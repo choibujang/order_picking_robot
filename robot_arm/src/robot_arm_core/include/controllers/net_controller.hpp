@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <thread>
+#include <stdexcept>
 
 /**
  * @class NetController
@@ -34,14 +35,13 @@ public:
      *       [8-9] chunk_idx: 패킷 인덱스
      *       [10-11] total_chunks: 전체 패킷 수
      * @return 이미지 전체를 전송한 경우 true,
-     *         전송 중 네트워크 오류가 10회 이상 발생한 경우 false
+     *         전송 중 네트워크 오류가 발생한 경우
      */
-    bool sendMjpegData(std::vector<uint8_t> mjpeg_data);
+    void sendMjpegData(const std::vector<uint8_t>& mjpeg_data);
 
-    bool isNetworkError() {
-        return network_error_;
-    }
 private:
+    static constexpr int kMaxSendFailures = 10;
+
     const int device_id_;
 
     int sockfd_;
@@ -53,8 +53,6 @@ private:
     const int HEADER_SIZE = 12;
     const int MAX_UDP_PAYLOAD = 65000;
     const int MAX_CHUNK_SIZE = (MAX_UDP_PAYLOAD - HEADER_SIZE);
-
-    bool network_error_ = false;
 };
 
 #endif

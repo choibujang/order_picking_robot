@@ -1,3 +1,7 @@
+"""
+AI 서버의 메인 ROS 2 노드.
+UDP 서버와 AI 엔진을 실행하고, GetDetectedObjects 서비스를 제공합니다.
+"""
 import threading
 from queue import Queue
 
@@ -9,13 +13,14 @@ from ai_server_pkg.ai_engine import AIEngine
 
 from ros_interfaces.srv import GetDetectedObjects
 
+
 class AIServerNode(Node):
     def __init__(self):
         """
         ROS2 노드로서 UDP로 전송된 영상 청크를 조립하고 AI 엔진으로 물체를 검출하여
         서비스 요청에 검출 결과를 응답하는 역할을 수행한다.
         """
-        super().__init__('ai_server_node')
+        super().__init__("ai_server_node")
         # UDP로 수신된 완전한 프레임을 보관할 큐
         # {'device_id': int, 'data': bytes}
         self.frame_queue = Queue(maxsize=5)
@@ -37,8 +42,8 @@ class AIServerNode(Node):
 
         self.srv = self.create_service(
             GetDetectedObjects,
-            'get_detected_objects',
-            self.handle_request
+            "get_detected_objects",
+            self.handle_request,
         )
 
     def handle_request(self, request, response):
@@ -76,8 +81,8 @@ class AIServerNode(Node):
 
         for idx, (class_name, data) in enumerate(device_data.items()):
             class_names.append(class_name)
-            counts.append(data['count'])
-            for x, y in data['pixels']:
+            counts.append(data["count"])
+            for x, y in data["pixels"]:
                 pixel_x.append(x)
                 pixel_y.append(y)
                 pixel_class_indices.append(idx)
@@ -89,12 +94,15 @@ class AIServerNode(Node):
         response.pixel_class_indices = pixel_class_indices
         return response
 
+
 def main():
+    """AIServerNode를 실행하는 메인 함수."""
     rclpy.init()
     node = AIServerNode()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

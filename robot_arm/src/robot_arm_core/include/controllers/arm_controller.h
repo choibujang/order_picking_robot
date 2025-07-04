@@ -15,6 +15,8 @@
 #include <kdl_parser/kdl_parser.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include "pca9685_comm.h"
+#include <opencv2/core/mat.hpp>
+#include <opencv2/opencv.hpp>
 
 /**
  * @class ArmController
@@ -22,28 +24,7 @@
  */
 class ArmController {
 public:
-    ArmController(bool test=false)
-    : test_(test),
-      pca(test ? PiPCA9685::PCA9685("test", 0x00, true)
-               : PiPCA9685::PCA9685())  
-    {
-        if (!test_) {
-            pca_.set_pwm_freq(50);
-        }
-
-        std::string urdf_file = ament_index_cpp::get_package_share_directory("my_robot_description") + "/urdf/my_robot.urdf";
-        std::string base_link = "base_link";
-        std::string end_effector = "link_5";
-    
-        if (!loadKDLChain(urdf_file, base_link, end_effector)) {
-            throw std::runtime_error("Failed to initialize KDL chain.");
-        }
-    
-        // Initialize IK solver
-        ik_solver_ = std::make_unique<KDL::ChainIkSolverPos_LMA>(kdl_chain_);
-    
-        std::cout << "Robot Arm initialized with KDL chain from URDF." << std::endl;
-    }
+    ArmController();
 
     /**
      * @brief URDF 파일에서 KDL 체인을 로드한다.
@@ -70,11 +51,29 @@ public:
      */
     void moveMotors(const std::vector<double>& joint_angles);
 
+    /**
+     * @brief 카메라 좌표계 기준 3D 좌표를 월드 좌표계 기준 3D 좌표로 변환한다.
+     * @param camera_coords 카메라 좌표계의 3D 좌표 목록
+     * @return std::vector<std::vector<float>> 월드 좌표계의 3D 좌표 목록
+     */
+    std::vector<std::vector<float>> cameraToWorldCoords(const std::vector<std::vector<float>>& camera_coords);
+
 private:
-    bool test_;
+    // 서보 모터의 PWM 신호 범위 (서보 모델에 따라 조정 필요)
+    static constexpr int kServoMinPwm = 110;  // 0도에 해당하는 PWM 값
+    static constexpr int kServoMaxPwm = 450;  // 180도에 해당하는 PWM 값
+
     PiPCA9685::PCA9685 pca_;
     KDL::Chain kdl_chain_;
     std::unique_ptr<KDL::ChainIkSolverPos_LMA> ik_solver_;
     std::vector<double> current_joints_ = {0, 0, 0, 0, 0, 0};
+
+    // 월드 좌표계 변환을 위한 카메라의 외부 파라미터 (로봇 베이스 기준)
+    // 이 값들은 실제 로봇의 설정에 맞게 보정(calibration)되어야 합니다.
+    cv::Mat cam_to_world_rot_ = (cv::Mat_<float>(3, 3) <<
+        1, 0, 0,
+        0, 1, 0,
+        0, 0, 1);
+    cv::Mat cam_to_world_trans_ = (cv::Mat_<float>(3, 1) << 0.0, 0.0, 0.0); // 예: 로봇 베이스에서 카메라까지의 x, y, z 변위 (미터 단위)
 };
 #endif 

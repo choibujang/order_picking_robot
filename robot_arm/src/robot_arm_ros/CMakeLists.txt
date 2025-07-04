@@ -12,7 +12,7 @@ find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(ros_interfaces REQUIRED)
 find_package(OrbbecSDK REQUIRED)
-find_package(robot_arm_controllers REQUIRED)
+find_package(robot_arm_core REQUIRED)
 find_package(kdl_parser REQUIRED)
 
 
@@ -35,7 +35,7 @@ ament_target_dependencies(robot_arm_node
     "rclcpp"
     "rclcpp_action"
     "rclcpp_components"
-    "robot_arm_controllers"
+    "robot_arm_core"
     "kdl_parser")
 
 install(TARGETS robot_arm_node

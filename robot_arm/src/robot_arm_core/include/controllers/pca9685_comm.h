@@ -18,7 +18,7 @@ class I2CPeripheral;
 
 class PCA9685 {
 public:
-    explicit PCA9685(const std::string &device = "/dev/i2c-1", int address = 0x40, bool test = false);
+    explicit PCA9685(const std::string &device = "/dev/i2c-1", int address = 0x40);
     ~PCA9685();
 
     void set_pwm_freq(const double freq_hz);
@@ -36,8 +36,6 @@ private:
     
     // Default frequency pulled from PCA9685 datasheet.
     double frequency = 200.0;
-
-    bool test_;
 
 };
 

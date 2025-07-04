@@ -5,6 +5,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <stdexcept>
 #include <opencv2/opencv.hpp>
 
 #include "libobsensor/ObSensor.hpp"
@@ -15,18 +16,20 @@
  */
 class CamController {
 public:
-    CamController() {}
+    CamController();
+    ~CamController();
 
     /**
      * @brief 카메라의 color, depth 스트리밍을 활성화한다.
+     * @throw std::runtime_error 초기화 또는 스트림 시작 실패 시
      */
-    bool start();
+    void start();
 
     /**
-     * @brief 활성화된 스트림에서 frameset을 가져와 클래스 멤버 current_color_frame_, color_depth_frame_에 저장한다.
-     * @return frameset 수신 성공 여부
+     * @brief 활성화된 스트림에서 frameset을 가져와 클래스 멤버에 저장한다.
+     * @throw std::runtime_error 프레임 수신 실패 시
      */
-    bool update();
+    void update();
 
     /**
      * @brief 카메라 스트리밍을 중지한다.
@@ -37,43 +40,33 @@ public:
      * @brief RGB 이미지의 특정 픽셀 좌표를 카메라 좌표계 기준 3D 좌표로 변환한다.
      * @param pixel_coords RGB 이미지의 x, y좌표
      * @return 해당 픽셀의 카메라 기준 3d 좌표
+     * @throw std::runtime_error 변환에 필요한 depth 정보가 유효하지 않을 경우
      */
-    std::vector<std::vector<float>> pixelToCameraCoords(const std::vector<std::pair<int,int>& pixel_coords);
+    std::vector<std::vector<float>> pixelToCameraCoords(const std::vector<std::pair<int,int>>& pixel_coords);
 
     /**
      * @brief 카메라의 intrinsic parameter들을 출력한다.
      */ 
     void getCameraParam();
 
-    std::vector<uint8_t>  getColorFrame() {
-        std::vector<uint8_t> color_frame;
-        {
-            std::lock_guard<std::mutex> lock(color_frame_mutex_);
-            color_frame = current_color_frame_;
-        }
-        return color_frame;
+    std::vector<uint8_t> getColorFrame() {
+        std::lock_guard<std::mutex> lock(color_frame_mutex_);
+        return current_color_frame_;
     }
 
     cv::Mat getDepthFrame() {
-        cv::Mat depth_frame;
-        {
-            std::lock_guard<std::mutex> lock(depth_frame_mutex_);
-            depth_frame = current_depth_frame_;
-        }
-        return depth_frame;
+        std::lock_guard<std::mutex> lock(depth_frame_mutex_);
+        return current_depth_frame_;
     }
 
     cv::Mat getDepthMap() {
         updateDepthMap();
-
         return current_depth_map_.clone();
     }
 
-    bool isCameraError() {
-        return camera_error_;
-    }
-
 private:
+    static constexpr int kFrameWaitTimeoutMs = 100;
+
     /**
      * @brief 640*400 current_depth_frame_을 기반으로 
      *        640*480 RGB 카메라 기준으로 정렬된 Depth Map을 생성.
@@ -89,9 +82,9 @@ private:
     cv::Mat current_depth_map_;
     std::mutex color_frame_mutex_;
     std::mutex depth_frame_mutex_;
+    static constexpr int kMaxUpdateFailures = 5;
 
-    bool camera_error_ = false;
-
+    // Camera intrinsic and extrinsic parameters
     float depth_fx_ = 475.328;
     float depth_fy_ = 475.328;
     float depth_cx_ = 315.204;
@@ -123,8 +116,6 @@ private:
     );
 
     cv::Mat depth_to_rgb_trans_ = (cv::Mat_<float>(3, 1) << -9.98834, 0.0373371, -0.647012);
-
-
 };
 
 #endif
