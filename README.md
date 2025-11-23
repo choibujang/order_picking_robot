@@ -1,23 +1,31 @@
-# ROS 기반 로봇 팔 자동화 프로젝트 🤖
+# 🤖 오더 피킹 로봇
 
-## 📌 프로젝트 개요
-이 프로젝트는 주어진 물체 목록을 기반으로 
-Depth Camera를 이용해 대상 물체를 인식하고 3D 좌표를 추정한 뒤,
-로봇 팔을 제어하여 지정된 위치로 물체를 이동시키는 자동화 시스템을 구축하는 것을 목표로 합니다.
+주문부터 피킹까지 자동화된 로봇 물류 시스템
 
-## 🖼️ 시스템 구성도
-![System Architecture](./assets/system_architecture.png)
-## 📷 사용 장비
-- RaspberryPi 4B
-- [Orbbec] Astra Stereo S U3 3D Depth Camera
-- 서보모터 MG996R * 6
-- PCA9685 16채널 12비트 PWM 서보 드라이버
+## ⚙️ Features
+|기능|기능 상세|
+|------|------------|
+|주문 인식 기능|외부 시스템으로부터 주문 목록 수신|
+|객체 탐지 및 3D 위치 추정 기능|피킹 대상 물품을 정확히 인식하고 3차원 위치를 산출|
+|로봇 팔 경로 계획 및 피킹 기능|추정된 물체 위치를 기반으로 경로를 생성해 피킹 동작을 수행|
+
+## 💠 Environments
+### Hardware
+|||
+|------|------------|
+|RaspberryPi 4B|<img width="100" height="100" alt="Image" src="https://github.com/user-attachments/assets/c138dfb2-b360-43a7-83da-691d4196fe9c" />|
+|Orbbec Astra Stereo S U3 3D Depth Camera|<img width="100" height="100" alt="Image" src="https://github.com/user-attachments/assets/3028eb4f-3212-4d1c-a254-c4a41771ccb0" />|
+|RC9 HV20Kg서보 * 6|<img width="100" height="100" alt="Image" src="https://github.com/user-attachments/assets/3038fdb7-300f-4b42-a6de-4473217a43ae" />
+|PCA9685 PWM 서보 드라이버|<img width="100" height="100" alt="Image" src="https://github.com/user-attachments/assets/a51f8d4e-8652-4dd3-b44d-d07913169591" />|
+### Software
+- Ubuntu 20.04
+- ROS2 Humble
+
+## 🗺️ 시스템 구성도
+<img width="1287" height="768" alt="Image" src="https://github.com/user-attachments/assets/4537b622-9864-42eb-97d6-caaedff21c87" />
 
 ## 🚀 Getting Started
-### Robot Arm
-- **운영체제**: Ubuntu 20.04
-- **ROS 버전**: ROS2 Humble
-
+### 🦾 Robot Arm
 #### Orbbec Astra SDK 설치
 https://github.com/orbbec/OrbbecSDK   
 - 환경변수 설정:
@@ -46,7 +54,7 @@ source install/setup.bash
 ros2 run robot_arm_ros robot_arm_node
 ```
 
-### AI Server
+### 🧠 AI Server
 - **운영체제**: Ubuntu 20.04
 - **ROS 버전**: ROS2 Humble
 #### 프로젝트 다운로드 및 빌드
